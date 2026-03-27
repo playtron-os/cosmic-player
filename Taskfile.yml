@@ -198,6 +198,7 @@ tasks:
           --workdir "{{.PWD}}" \
           -e HOME=/home/build \
           -e CARGO_HOME=/home/build/.cargo \
+          -e PKG_CONFIG_SYSROOT_DIR="/usr/{{.ARCH}}-linux-gnu" \
           -e CARGO_NET_GIT_FETCH_WITH_CLI=true \
           -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
           --user {{.UID}}:{{.GID}} \

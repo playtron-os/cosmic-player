@@ -11,7 +11,9 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     libssl-dev:arm64 \
     libgstreamer1.0-dev \
-    libgstreamer-plugins-base1.0-dev
+    libgstreamer1.0-dev:arm64 \
+    libgstreamer-plugins-base1.0-dev \
+    libgstreamer-plugins-base1.0-dev:arm64
 
 RUN apt-get install -y \
     g++-aarch64-linux-gnu \
