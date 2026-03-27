@@ -20,6 +20,7 @@ RUN apt-get install -y \
 # Taskfile support
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/task/task/setup.deb.sh' | bash
 RUN apt-get install -y task
+RUN ln -sf /usr/bin/task /usr/bin/go-task
 
 # RPM support
 RUN apt-get install -y rpm librpmbuild10 elfutils
