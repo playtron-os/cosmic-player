@@ -1,18 +1,18 @@
 #TODO: more build-out, desktop actions, translations?
 [Desktop Entry]
-Name=COSMIC Media Player
-Name[ar]=مشغّل وسائط COSMIC
-Name[cs]=Přehrávač médií COSMIC
-Name[zh_CN]=COSMIC 媒体播放器
-Name[hu]=COSMIC Médialejátszó
-Name[pl]=Odtwarzacz Multimediów COSMIC
+Name=Media Player
+Name[ar]=مشغّل وسائط
+Name[cs]=Přehrávač médií
+Name[zh_CN]=媒体播放器
+Name[hu]=Médialejátszó
+Name[pl]=Odtwarzacz Multimediów
 Name[pt_BR]=Reprodutor de Mídia
 Name[pt]=Reprodutor de Mídia
 Name[ru]=Медиаплеер
-Name[sk]=Prehrávač Médií COSMIC
-Name[sv]=COSMIC Mediaspelare
-Name[es]=Reproductor de medios COSMIC
-Name[it]=COSMIC Media Player
+Name[sk]=Prehrávač Médií
+Name[sv]=Mediaspelare
+Name[es]=Reproductor de medios
+Name[it]=Media Player
 Exec=cosmic-player %U
 Terminal=false
 Type=Application

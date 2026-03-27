@@ -802,7 +802,7 @@ impl App {
 
     fn update_title(&mut self) -> Command<Message> {
         //TODO: filename?
-        let title = "COSMIC Media Player";
+        let title = "Media Player";
         self.set_window_title(title.to_string())
     }
 

@@ -1,2 +1,2 @@
 # cosmic-player
-WIP COSMIC media player
+WIP media player

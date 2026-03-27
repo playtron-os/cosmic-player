@@ -19,4 +19,4 @@ Architecture: amd64 arm64
 Depends: ${misc:Depends}, ${shlibs:Depends},
       gstreamer1.0-plugins-base,
       gstreamer1.0-plugins-good,
-Description: Cosmic Media Player
+Description: Media Player
