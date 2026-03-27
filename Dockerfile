@@ -24,7 +24,7 @@ RUN cd /tmp && \
     apt-get download \
     libgstreamer1.0-dev:arm64 \
     libgstreamer-plugins-base1.0-dev:arm64 \
-    libglib2.0-dev:arm64 && \
+    libgio-2.0-dev:arm64 && \
     for deb in *.deb; do dpkg -x "$deb" /; done && \
     rm -f *.deb
 
@@ -48,5 +48,7 @@ ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
 ENV CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
 ENV CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
 
-# Tell the Rust pkg-config crate where to find arm64 .pc files for cross-compilation
-ENV PKG_CONFIG_LIBDIR_aarch64_unknown_linux_gnu=/usr/lib/aarch64-linux-gnu/pkgconfig
+# Tell the Rust pkg-config crate where to find arm64 .pc files for cross-compilation.
+# arm64 .pc files are listed first; x86_64 serves as fallback for transitive dep validation.
+ENV PKG_CONFIG_SYSROOT_DIR_aarch64_unknown_linux_gnu=/
+ENV PKG_CONFIG_LIBDIR_aarch64_unknown_linux_gnu=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig
