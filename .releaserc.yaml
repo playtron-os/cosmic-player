@@ -40,7 +40,8 @@ plugins:
 
   # Create a GitHub release with RPM assets
   - - "@semantic-release/github"
-    - assets:
+    - successComment: false
+      assets:
         - path: "dist/*x86_64*.rpm"
           label: "RPM (x86_64)"
         - path: "dist/*aarch64*.rpm"
