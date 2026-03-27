@@ -2,17 +2,16 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 use cosmic::{
-    app::{command, message, Command, Core, Settings},
+    app::{Core, Settings, Task},
     cosmic_config::{self, CosmicConfigEntry},
     cosmic_theme, executor, font,
     iced::{
         event::{self, Event},
         keyboard::{Event as KeyEvent, Key, Modifiers},
         mouse::{Event as MouseEvent, ScrollDelta},
-        subscription::Subscription,
-        window, Alignment, Background, Border, Color, ContentFit, Length, Limits,
+        window, Alignment, Background, Border, Color, ContentFit, Length, Limits, Subscription,
     },
-    iced_style, theme,
+    theme,
     widget::{self, menu::action::MenuAction, nav_bar, segmented_button, Slider},
     Application, ApplicationExt, Element,
 };
@@ -351,15 +350,15 @@ impl App {
         was_open
     }
 
-    fn load(&mut self) -> Command<Message> {
+    fn load(&mut self) -> Task<Message> {
         if self.close() {
             // Allow a redraw before trying to load again, to prevent deadlock
-            return Command::perform(async { message::app(Message::Reload) }, |x| x);
+            return cosmic::task::future(async { cosmic::action::app(Message::Reload) });
         }
 
         let url = match &self.flags.url_opt {
             Some(some) => some.clone(),
-            None => return Command::none(),
+            None => return Task::none(),
         };
 
         log::info!("Loading {}", url);
@@ -595,7 +594,7 @@ impl App {
             || !self
                 .video_opt
                 .as_ref()
-                .map_or(false, |video| video.has_video())
+                .map_or(false, |video| video.size() != (0, 0))
         {
             self.core.window.show_headerbar = true && !self.fullscreen;
             self.controls = true;
@@ -607,8 +606,8 @@ impl App {
         self.update_mpris_state();
     }
 
-    fn update_config(&mut self) -> Command<Message> {
-        cosmic::app::command::set_theme(self.flags.config.app_theme.theme())
+    fn update_config(&mut self) -> Task<Message> {
+        cosmic::command::set_theme(self.flags.config.app_theme.theme())
     }
 
     fn update_flags(&mut self) {
@@ -800,7 +799,7 @@ impl App {
         self.nav_model.activate(active_id);
     }
 
-    fn update_title(&mut self) -> Command<Message> {
+    fn update_title(&mut self) -> Task<Message> {
         //TODO: filename?
         let title = "Media Player";
         self.set_window_title(title.to_string())
@@ -850,7 +849,7 @@ impl Application for App {
     }
 
     /// Creates the application, and optionally emits command on initialize.
-    fn init(mut core: Core, flags: Self::Flags) -> (Self, Command<Self::Message>) {
+    fn init(mut core: Core, flags: Self::Flags) -> (Self, Task<Self::Message>) {
         core.window.content_container = false;
 
         #[cfg(feature = "xdg-portal")]
@@ -905,8 +904,12 @@ impl Application for App {
             .as_ref()
             .and_then(|url| url.to_file_path().ok());
         let command = match (app.flags.urls.take(), maybe_path) {
-            (Some(urls), _) => command::message::app(Message::MultipleLoad(urls)),
-            (None, Some(path)) if path.is_dir() => command::message::app(Message::FolderLoad(path)),
+            (Some(urls), _) => {
+                cosmic::task::message(cosmic::action::app(Message::MultipleLoad(urls)))
+            }
+            (None, Some(path)) if path.is_dir() => {
+                cosmic::task::message(cosmic::action::app(Message::FolderLoad(path)))
+            }
             _ => app.load(), //If there is no url args, we execute load for nothing?
                              //If only one file is loaded, nothing is added to the navbar.
         };
@@ -917,15 +920,15 @@ impl Application for App {
         Some(&self.nav_model)
     }
 
-    fn on_escape(&mut self) -> Command<Self::Message> {
+    fn on_escape(&mut self) -> Task<Self::Message> {
         if self.fullscreen {
             return self.update(Message::Fullscreen);
         } else {
-            Command::none()
+            Task::none()
         }
     }
 
-    fn on_nav_select(&mut self, id: nav_bar::Id) -> Command<Message> {
+    fn on_nav_select(&mut self, id: nav_bar::Id) -> Task<Message> {
         // Toggle open state and get clone of node data
         let node_opt = match self.nav_model.data_mut::<ProjectNode>(id) {
             Some(node) => {
@@ -966,13 +969,13 @@ impl Application for App {
                         // folder in condensed mode.
                         self.core_mut().nav_bar_set_toggled(true);
 
-                        Command::none()
+                        Task::none()
                     }
                     ProjectNode::File { path, .. } => match url::Url::from_file_path(&path) {
                         Ok(url) => self.update(Message::FileLoad(url)),
                         Err(()) => {
                             log::warn!("failed to convert {:?} to url", path);
-                            Command::none()
+                            Task::none()
                         }
                     },
                 }
@@ -984,19 +987,18 @@ impl Application for App {
         }
     }
 
-    fn style(&self) -> Option<theme::Application> {
+    fn style(&self) -> Option<cosmic::iced_runtime::Appearance> {
         // This ensures we have a solid background color even when using no content container
-        Some(theme::Application::Custom(Box::new(|theme| {
-            iced_style::application::Appearance {
-                background_color: theme.cosmic().bg_color().into(),
-                icon_color: theme.cosmic().on_bg_color().into(),
-                text_color: theme.cosmic().on_bg_color().into(),
-            }
-        })))
+        let theme = theme::active();
+        Some(cosmic::iced_runtime::Appearance {
+            background_color: theme.cosmic().bg_color().into(),
+            icon_color: theme.cosmic().on_bg_color().into(),
+            text_color: theme.cosmic().on_bg_color().into(),
+        })
     }
 
     /// Handle application events here.
-    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
+    fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         match message {
             Message::None => {}
             Message::Config(config) => {
@@ -1031,22 +1033,19 @@ impl Application for App {
             Message::FileOpen => {
                 //TODO: embed cosmic-files dialog (after libcosmic rebase works)
                 #[cfg(feature = "xdg-portal")]
-                return Command::perform(
-                    async move {
-                        let dialog = cosmic::dialog::file_chooser::open::Dialog::new()
-                            .title(fl!("open-media"));
-                        match dialog.open_file().await {
-                            Ok(response) => {
-                                message::app(Message::FileLoad(response.url().to_owned()))
-                            }
-                            Err(err) => {
-                                log::warn!("failed to open file: {}", err);
-                                message::none()
-                            }
+                return cosmic::task::future(async move {
+                    let dialog =
+                        cosmic::dialog::file_chooser::open::Dialog::new().title(fl!("open-media"));
+                    match dialog.open_file().await {
+                        Ok(response) => {
+                            cosmic::action::app(Message::FileLoad(response.url().to_owned()))
                         }
-                    },
-                    |x| x,
-                );
+                        Err(err) => {
+                            log::warn!("failed to open file: {}", err);
+                            cosmic::action::none()
+                        }
+                    }
+                });
             }
             Message::FileClearRecents => {
                 self.flags.config_state.recent_files.clear();
@@ -1095,29 +1094,26 @@ impl Application for App {
             Message::FolderOpen => {
                 //TODO: embed cosmic-files dialog (after libcosmic rebase works)
                 #[cfg(feature = "xdg-portal")]
-                return Command::perform(
-                    async move {
-                        let dialog = cosmic::dialog::file_chooser::open::Dialog::new()
-                            .title(fl!("open-media-folder"));
-                        match dialog.open_folder().await {
-                            Ok(response) => {
-                                let url = response.url();
-                                match url.to_file_path() {
-                                    Ok(path) => message::app(Message::FolderLoad(path)),
-                                    Err(()) => {
-                                        log::warn!("unsupported folder URL {:?}", url);
-                                        message::none()
-                                    }
+                return cosmic::task::future(async move {
+                    let dialog = cosmic::dialog::file_chooser::open::Dialog::new()
+                        .title(fl!("open-media-folder"));
+                    match dialog.open_folder().await {
+                        Ok(response) => {
+                            let url = response.url();
+                            match url.to_file_path() {
+                                Ok(path) => cosmic::action::app(Message::FolderLoad(path)),
+                                Err(()) => {
+                                    log::warn!("unsupported folder URL {:?}", url);
+                                    cosmic::action::none()
                                 }
                             }
-                            Err(err) => {
-                                log::warn!("failed to open folder: {}", err);
-                                message::none()
-                            }
                         }
-                    },
-                    |x| x,
-                );
+                        Err(err) => {
+                            log::warn!("failed to open folder: {}", err);
+                            cosmic::action::none()
+                        }
+                    }
+                });
             }
             Message::FolderOpenRecent(index) => {
                 if let Some(path) = self.flags.config_state.recent_projects.get(index) {
@@ -1160,7 +1156,7 @@ impl Application for App {
                 self.core.window.show_headerbar = !self.fullscreen;
                 self.controls = !self.fullscreen;
                 return window::change_mode(
-                    window::Id::MAIN,
+                    self.core.main_window_id().unwrap_or(window::Id::RESERVED),
                     if self.fullscreen {
                         window::Mode::Fullscreen
                     } else {
@@ -1337,7 +1333,7 @@ impl Application for App {
                 if self.flags.config_state.player_state.repeat == RepeatState::Track {
                     // we hook Message::PlayNext to the EOS signal. iced_video_player always emits EOS regardless of
                     // looping state, so do nothing if repeat is set.
-                    return Command::none();
+                    return Task::none();
                 }
 
                 //first we get info about current media id & position in nav_bar
@@ -1385,9 +1381,8 @@ impl Application for App {
                 if let Some(video) = &mut self.video_opt {
                     video.set_paused(true);
                 }
-                return Command::perform(
-                    async move {
-                        tokio::task::spawn_blocking(move || {
+                return cosmic::task::future(async move {
+                    tokio::task::spawn_blocking(move || {
                             match gst_pbutils::MissingPluginMessage::parse(&element) {
                                 Ok(missing_plugin) => {
                                     let mut install_ctx = gst_pbutils::InstallPluginsContext::new();
@@ -1419,7 +1414,7 @@ impl Application for App {
                                                     "gstreamer registry update: {:?}",
                                                     gst::Registry::update()
                                                 );
-                                                return message::app(Message::Reload);
+                                                return cosmic::action::app(Message::Reload);
                                             },
                                             _ => {
                                                 log::warn!("failed to install plugins: {status}");
@@ -1433,13 +1428,11 @@ impl Application for App {
                                     log::warn!("failed to parse missing plugin message: {err}");
                                 }
                             }
-                            message::none()
+                            cosmic::action::none()
                         })
                         .await
                         .unwrap()
-                    },
-                    |x| x,
-                );
+                });
             }
             Message::MprisChannel(meta, state, tx) => {
                 self.mpris_opt = Some((meta, state, tx));
@@ -1467,7 +1460,7 @@ impl Application for App {
                 process::exit(0);
             }
         }
-        Command::none()
+        Task::none()
     }
 
     fn header_start(&self) -> Vec<Element<'_, Self::Message>> {
@@ -1501,25 +1494,25 @@ impl Application for App {
         let Some(video) = &self.video_opt else {
             //TODO: use space variables
             let column = widget::column::with_capacity(4)
-                .align_items(Alignment::Center)
+                .align_x(Alignment::Center)
                 .spacing(24)
                 .width(Length::Fill)
                 .height(Length::Fill)
-                .push(widget::vertical_space(Length::Fill))
+                .push(widget::vertical_space().height(Length::Fill))
                 .push(
                     widget::column::with_capacity(2)
-                        .align_items(Alignment::Center)
+                        .align_x(Alignment::Center)
                         .spacing(8)
                         .push(widget::icon::from_name("folder-symbolic").size(64))
                         .push(widget::text::body(fl!("no-video-or-audio-file-open"))),
                 )
                 .push(widget::button::suggested(fl!("open-file")).on_press(Message::FileOpen))
-                .push(widget::vertical_space(Length::Fill));
+                .push(widget::vertical_space().height(Length::Fill));
 
             return widget::container(column)
                 .width(Length::Fill)
                 .height(Length::Fill)
-                .style(theme::Container::WindowBackground)
+                .class(theme::Container::WindowBackground)
                 .into();
         };
 
@@ -1528,7 +1521,6 @@ impl Application for App {
 
         let mut video_player: Element<_> = VideoPlayer::new(video)
             .mouse_hidden(!self.controls)
-            .on_duration_changed(Message::DurationChanged)
             .on_end_of_stream(Message::PlayNext)
             .on_missing_plugin(Message::MissingPlugin)
             .on_new_frame(Message::NewFrame)
@@ -1538,12 +1530,12 @@ impl Application for App {
 
         let mut background_color = Color::BLACK;
         let mut text_color_opt = None;
-        if !video.has_video() {
+        if video.size() == (0, 0) {
             background_color = theme.cosmic().bg_component_color().into();
             text_color_opt = Some(Color::from(theme.cosmic().on_bg_component_color()));
 
             let mut col = widget::column();
-            col = col.push(widget::vertical_space(Length::Fill));
+            col = col.push(widget::vertical_space().height(Length::Fill));
             if let Some(album_art) = &self.album_art_opt {
                 col = col.push(
                     widget::image(widget::image::Handle::from_path(album_art.path()))
@@ -1553,7 +1545,7 @@ impl Application for App {
             } else {
                 col = col.push(widget::icon::from_name("audio-x-generic-symbolic").size(256));
             }
-            col = col.push(widget::vertical_space(space_s));
+            col = col.push(widget::vertical_space().height(space_s));
             if self.mpris_meta.title.is_empty() {
                 col = col.push(widget::text::title4(fl!("untitled")));
             } else {
@@ -1566,7 +1558,7 @@ impl Application for App {
                     col = col.push(widget::text::body(artist));
                 }
             }
-            col = col.push(widget::vertical_space(space_s));
+            col = col.push(widget::vertical_space().height(space_s));
             if !self.mpris_meta.album.is_empty() {
                 col = col.push(widget::text::body(fl!(
                     "album",
@@ -1576,7 +1568,7 @@ impl Application for App {
             if let Some(year) = &self.mpris_meta.album_year_opt {
                 col = col.push(widget::text::body(format!("{}", year)));
             }
-            col = col.push(widget::vertical_space(Length::Fill));
+            col = col.push(widget::vertical_space().height(Length::Fill));
 
             // Space to keep from going under control overlay
             let mut control_height = space_xxs + 32 + space_xxs;
@@ -1586,11 +1578,11 @@ impl Application for App {
 
             // This is a hack to have the video player running but not visible (since the controls will cover it as an overlay)
             video_player = widget::row::with_children(vec![
-                widget::horizontal_space(Length::Fill).into(),
+                widget::horizontal_space().width(Length::Fill).into(),
                 widget::container(col.push(widget::container(video_player).height(control_height)))
                     .width(320)
                     .into(),
-                widget::horizontal_space(Length::Fill).into(),
+                widget::horizontal_space().width(Length::Fill).into(),
             ])
             .into();
         }
@@ -1629,7 +1621,7 @@ impl Application for App {
                                 .step(0.01)
                                 .into(),
                         ])
-                        .align_items(Alignment::Center)
+                        .align_y(Alignment::Center)
                         .into(),
                     );
                 }
@@ -1668,14 +1660,14 @@ impl Application for App {
 
             popup_items.push(
                 widget::row::with_children(vec![
-                    widget::horizontal_space(Length::Fill).into(),
+                    widget::horizontal_space().width(Length::Fill).into(),
                     widget::container(column)
                         .padding(1)
                         //TODO: move style to libcosmic
-                        .style(theme::Container::custom(|theme| {
+                        .style(|theme| {
                             let cosmic = theme.cosmic();
                             let component = &cosmic.background.component;
-                            widget::container::Appearance {
+                            widget::container::Style {
                                 icon_color: Some(component.on.into()),
                                 text_color: Some(component.on.into()),
                                 background: Some(Background::Color(component.base.into())),
@@ -1686,7 +1678,7 @@ impl Application for App {
                                 },
                                 ..Default::default()
                             }
-                        }))
+                        })
                         .width(Length::Fixed(240.0))
                         .into(),
                 ])
@@ -1695,7 +1687,7 @@ impl Application for App {
         }
         if self.controls {
             let mut row = widget::row::with_capacity(8)
-                .align_items(Alignment::Center)
+                .align_y(Alignment::Center)
                 .spacing(space_xxs)
                 .push(
                     widget::button::icon(
@@ -1721,14 +1713,14 @@ impl Application for App {
                         RepeatState::Track => RepeatState::Disabled,
                     },
                 )),
-                match self.flags.config_state.player_state.repeat {
+                widget::text(match self.flags.config_state.player_state.repeat {
                     RepeatState::Disabled => fl!("repeat-disabled"),
                     RepeatState::Track => fl!("repeat-track"),
-                },
+                }),
                 widget::tooltip::Position::Top,
             ));
             if self.core.is_condensed() {
-                row = row.push(widget::horizontal_space(Length::Fill));
+                row = row.push(widget::horizontal_space().width(Length::Fill));
             } else {
                 row = row
                     .push(widget::text(format_time(self.position)).font(font::mono()))
@@ -1777,7 +1769,7 @@ impl Application for App {
             popup_items.push(
                 widget::container(row)
                     .padding([space_xxs, space_xs])
-                    .style(theme::Container::WindowBackground)
+                    .class(theme::Container::WindowBackground)
                     .into(),
             );
 
@@ -1785,7 +1777,7 @@ impl Application for App {
                 popup_items.push(
                     widget::container(
                         widget::row::with_capacity(3)
-                            .align_items(Alignment::Center)
+                            .align_y(Alignment::Center)
                             .spacing(space_xxs)
                             .push(widget::text(format_time(self.position)).font(font::mono()))
                             .push(
@@ -1799,7 +1791,7 @@ impl Application for App {
                             ),
                     )
                     .padding([space_xxs, space_xs])
-                    .style(theme::Container::WindowBackground)
+                    .class(theme::Container::WindowBackground)
                     .into(),
                 );
             }
@@ -1811,14 +1803,14 @@ impl Application for App {
         widget::container(popover)
             .width(Length::Fill)
             .height(Length::Fill)
-            .style(theme::Container::Custom(Box::new(move |_theme| {
+            .style(move |_theme| {
                 let mut appearance =
-                    widget::container::Appearance::default().with_background(background_color);
+                    widget::container::Style::default().background(background_color);
                 if let Some(text_color) = text_color_opt {
                     appearance.text_color = Some(text_color);
                 }
                 appearance
-            })))
+            })
             .into()
     }
 
@@ -1828,7 +1820,7 @@ impl Application for App {
         struct ThemeSubscription;
 
         let mut subscriptions = vec![
-            event::listen_with(|event, _status| match event {
+            event::listen_with(|event, _status, _window_id| match event {
                 Event::Keyboard(KeyEvent::KeyPressed { key, modifiers, .. }) => {
                     Some(Message::Key(modifiers, key))
                 }

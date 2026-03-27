@@ -39,6 +39,7 @@ pub fn menu_bar<'a>(
     for (i, path) in config_state.recent_files.iter().enumerate() {
         recent_files.push(menu::Item::Button(
             format_url(path),
+            None,
             Action::FileOpenRecent(i),
         ));
     }
@@ -46,6 +47,7 @@ pub fn menu_bar<'a>(
         recent_files.push(menu::Item::Divider);
         recent_files.push(menu::Item::Button(
             fl!("clear-recent"),
+            None,
             Action::FileClearRecents,
         ));
     }
@@ -59,6 +61,7 @@ pub fn menu_bar<'a>(
     for (i, path) in config_state.recent_projects.iter().enumerate() {
         recent_projects.push(menu::Item::Button(
             format_path(path),
+            None,
             Action::FolderOpenRecent(i),
         ));
     }
@@ -66,6 +69,7 @@ pub fn menu_bar<'a>(
         recent_projects.push(menu::Item::Divider);
         recent_projects.push(menu::Item::Button(
             fl!("clear-recent"),
+            None,
             Action::FolderClearRecents,
         ));
     }
@@ -74,24 +78,25 @@ pub fn menu_bar<'a>(
     for (folder_i, (name, _path)) in projects.iter().enumerate() {
         close_projects.push(menu::Item::Button(
             name.clone(),
+            None,
             Action::FolderClose(folder_i),
         ));
     }
 
     MenuBar::new(vec![menu::Tree::with_children(
-        menu::root(fl!("file")),
+        cosmic::Element::from(menu::root(fl!("file"))),
         menu::items(
             key_binds,
             vec![
-                menu::Item::Button(fl!("open-media"), Action::FileOpen),
+                menu::Item::Button(fl!("open-media"), None, Action::FileOpen),
                 menu::Item::Folder(fl!("open-recent-media"), recent_files),
-                menu::Item::Button(fl!("close-file"), Action::FileClose),
+                menu::Item::Button(fl!("close-file"), None, Action::FileClose),
                 menu::Item::Divider,
-                menu::Item::Button(fl!("open-media-folder"), Action::FolderOpen),
+                menu::Item::Button(fl!("open-media-folder"), None, Action::FolderOpen),
                 menu::Item::Folder(fl!("open-recent-media-folder"), recent_projects),
                 menu::Item::Folder(fl!("close-media-folder"), close_projects),
                 menu::Item::Divider,
-                menu::Item::Button(fl!("quit"), Action::WindowClose),
+                menu::Item::Button(fl!("quit"), None, Action::WindowClose),
             ],
         ),
     )])

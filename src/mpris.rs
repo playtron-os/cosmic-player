@@ -1,6 +1,6 @@
 use cosmic::iced::{
     futures::{self, SinkExt},
-    subscription::{self, Subscription},
+    stream, Subscription,
 };
 use mpris_server::{
     LoopStatus, Metadata, PlaybackRate, PlaybackStatus, PlayerInterface, Property, RootInterface,
@@ -379,10 +379,9 @@ impl PlaylistsInterface for Player {
 
 pub fn subscription() -> Subscription<Message> {
     struct MprisSubscription;
-    subscription::channel(
+    Subscription::run_with_id(
         TypeId::of::<MprisSubscription>(),
-        16,
-        move |mut msg_tx| async move {
+        stream::channel(16, move |mut msg_tx| async move {
             let (event_tx, mut event_rx) = mpsc::unbounded_channel();
             let meta = MprisMeta::default();
             let state = MprisState::default();
@@ -452,6 +451,6 @@ pub fn subscription() -> Subscription<Message> {
                     future::pending().await
                 }
             }
-        },
+        }),
     )
 }

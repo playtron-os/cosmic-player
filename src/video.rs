@@ -4,17 +4,14 @@ use iced_video_player::{
     gst_app, gst_pbutils,
 };
 
-use cosmic::app::{Command, message};
+use cosmic::app::Task;
 
 #[derive(Debug, Default)]
 pub struct VideoSettings {
     pub mute: bool,
 }
 
-pub fn new_video(
-    url: &url::Url,
-    settings: VideoSettings,
-) -> Result<Video, cosmic::Command<cosmic::app::Message<super::Message>>> {
+pub fn new_video(url: &url::Url, settings: VideoSettings) -> Result<Video, Task<super::Message>> {
     //TODO: this code came from iced_video_player::Video::new and has been modified to stop the pipeline on error
     //TODO: remove unwraps and enable playback of files with only audio.
     gst::init().unwrap();
@@ -68,10 +65,9 @@ pub fn new_video(
                 match msg.view() {
                     gst::MessageView::Element(element) => {
                         if gst_pbutils::MissingPluginMessage::is(&element) {
-                            commands.push(Command::perform(
-                                async { message::app(super::Message::MissingPlugin(msg)) },
-                                |x| x,
-                            ));
+                            commands.push(cosmic::task::future(async {
+                                cosmic::action::app(super::Message::MissingPlugin(msg))
+                            }));
                             // Do one codec install at a time
                             break;
                         }
@@ -80,7 +76,7 @@ pub fn new_video(
                 }
             }
             pipeline.set_state(gst::State::Null).unwrap();
-            Err(Command::batch(commands))
+            Err(Task::batch(commands))
         }
     }
 }
