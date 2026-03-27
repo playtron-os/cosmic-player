@@ -185,18 +185,21 @@ tasks:
         {{ if ne .SSH_KEY "" }}
           echo "{{.SSH_KEY}}" > .cache/.ssh/id_ed25519
           chmod 600 .cache/.ssh/id_ed25519
-          ssh-keyscan -t ed25519 github.com > .cache/.ssh/known_hosts 2>/dev/null
+        {{ else }}
+          cp ~/.ssh/* .cache/.ssh
         {{ end }}
-      - >
-        docker run --rm
-        -v {{.PWD}}:/workspace
-        -v {{.PWD}}/.cache/home:/home/build
-        -v {{.PWD}}/.cache/.ssh:/home/build/.ssh:ro
-        -v {{.PWD}}/.cache/passwd:/etc/passwd:ro
-        -v {{.PWD}}/.cache/var/lib/rpm:/var/lib/rpm
-        -e CARGO_HOME=/home/build/.cargo
-        -e CARGO_TARGET_DIR=/workspace/target
-        -u {{.UID}}:{{.GID}}
-        -w /workspace
-        {{.IMAGE_NAME}}:{{.IMAGE_TAG}}
-        go-task {{.TARGET}} ARCH={{.ARCH}} TARGET_ARCH={{.TARGET_ARCH}}
+      - |
+        docker run --rm \
+          -v "{{.PWD}}:{{.PWD}}" \
+          -v "{{.PWD}}/.cache/home:/home/build" \
+          -v "{{.PWD}}/.cache/var/lib/rpm:/var/lib/rpm" \
+          -v "{{.PWD}}/.cache/.ssh:/home/build/.ssh" \
+          -v "{{.PWD}}/.cache/passwd:/etc/passwd" \
+          --workdir "{{.PWD}}" \
+          -e HOME=/home/build \
+          -e CARGO_HOME=/home/build/.cargo \
+          -e CARGO_NET_GIT_FETCH_WITH_CLI=true \
+          -e GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+          --user {{.UID}}:{{.GID}} \
+          {{.IMAGE_NAME}}:{{.IMAGE_TAG}} \
+          go-task {{.TARGET}} ARCH={{.ARCH}} TARGET_ARCH={{.TARGET_ARCH}}
