@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/playtron-os/cosmic-player/compare/v1.0.0...v1.0.1) (2026-04-09)
+
+
+### Bug Fixes
+
+* update app icon ([aaefc42](https://github.com/playtron-os/cosmic-player/commit/aaefc42049f6a69a0d9ffc145401a7196983532e))
+
 # 1.0.0 (2026-03-27)
 
 
