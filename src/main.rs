@@ -913,7 +913,8 @@ impl Application for App {
             _ => app.load(), //If there is no url args, we execute load for nothing?
                              //If only one file is loaded, nothing is added to the navbar.
         };
-        (app, command)
+        let title_command = app.update_title();
+        (app, Task::batch([command, title_command]))
     }
 
     fn nav_model(&self) -> Option<&nav_bar::Model> {
