@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/playtron-os/cosmic-player/compare/v1.0.2...v1.0.3) (2026-04-24)
+
+
+### Bug Fixes
+
+* update libcosmic ([ac66928](https://github.com/playtron-os/cosmic-player/commit/ac66928bf062f40e30f644796045e0744281ff71))
+
 ## [1.0.2](https://github.com/playtron-os/cosmic-player/compare/v1.0.1...v1.0.2) (2026-04-11)
 
 
