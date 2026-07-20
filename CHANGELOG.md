@@ -1,3 +1,10 @@
+## [1.0.5](https://github.com/playtron-os/cosmic-player/compare/v1.0.4...v1.0.5) (2026-07-20)
+
+
+### Bug Fixes
+
+* play audio-only files opened via Open File ([cca70e1](https://github.com/playtron-os/cosmic-player/commit/cca70e1051233a001e9f5afae40c28607306e8ab))
+
 ## [1.0.4](https://github.com/playtron-os/cosmic-player/compare/v1.0.3...v1.0.4) (2026-07-02)
 
 
