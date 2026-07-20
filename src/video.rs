@@ -13,11 +13,14 @@ pub struct VideoSettings {
 
 pub fn new_video(url: &url::Url, settings: VideoSettings) -> Result<Video, Task<super::Message>> {
     //TODO: this code came from iced_video_player::Video::new and has been modified to stop the pipeline on error
-    //TODO: remove unwraps and enable playback of files with only audio.
+    //TODO: remove unwraps.
     gst::init().unwrap();
 
+    // The `vis` flag makes playbin render an audio visualization when the media has no video
+    // stream, so audio-only files (e.g. mp3) still produce the video frames the player needs to
+    // negotiate its sink and play. The remaining flags are playbin's defaults.
     let pipeline = format!(
-        "playbin uri=\"{}\"{} video-sink=\"videoscale ! videoconvert ! videoflip method=automatic ! appsink name=iced_video drop=true caps=video/x-raw,format=NV12,pixel-aspect-ratio=1/1\"",
+        "playbin uri=\"{}\"{} flags=soft-colorbalance+deinterlace+soft-volume+text+audio+video+vis video-sink=\"videoscale ! videoconvert ! videoflip method=automatic ! appsink name=iced_video drop=true caps=video/x-raw,format=NV12,pixel-aspect-ratio=1/1\"",
         url.as_str(),
         if settings.mute { " mute=true" } else { "" }
     );
