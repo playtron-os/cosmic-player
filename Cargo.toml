@@ -30,7 +30,7 @@ env_logger = "0.10"
 log = "0.4"
 
 [dependencies.iced_video_player]
-git = "https://github.com/jackpot51/iced_video_player.git"
+git = "https://github.com/playtron-os/iced_video_player.git"
 branch = "cosmic"
 default-features = false
 
@@ -54,9 +54,6 @@ wgpu = ["iced_video_player/wgpu", "libcosmic/wgpu"]
 [profile.release-with-debug]
 inherits = "release"
 debug = true
-
-# [patch.'https://github.com/jackpot51/iced_video_player']
-# iced_video_player = { path = "../../iced_video_player" }
 
 [patch.'https://github.com/pop-os/libcosmic']
 libcosmic = { git = "https://github.com/playtron-os/libcosmic.git" }
