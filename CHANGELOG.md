@@ -1,3 +1,10 @@
+## [1.0.6](https://github.com/playtron-os/cosmic-player/compare/v1.0.5...v1.0.6) (2026-07-23)
+
+
+### Bug Fixes
+
+* update deps to fix mp3 files not playing sometimes ([b40233d](https://github.com/playtron-os/cosmic-player/commit/b40233d2b71c623d10f30a6dc393abe34e0677af))
+
 ## [1.0.5](https://github.com/playtron-os/cosmic-player/compare/v1.0.4...v1.0.5) (2026-07-20)
 
 
