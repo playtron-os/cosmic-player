@@ -1,6 +1,6 @@
 Name:           cosmic-player
 Epoch:          1
-Version: 1.0.6
+Version: 1.0.7
 Release:        1%{?dist}
 Summary:        Media Player (Playtron fork)
 

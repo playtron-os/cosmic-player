@@ -1,3 +1,10 @@
+## [1.0.7](https://github.com/playtron-os/cosmic-player/compare/v1.0.6...v1.0.7) (2026-07-24)
+
+
+### Bug Fixes
+
+* add audio support to .desktop file ([4c4b887](https://github.com/playtron-os/cosmic-player/commit/4c4b887b2b4472833a6ec30d3d3b89d632018a6b))
+
 ## [1.0.6](https://github.com/playtron-os/cosmic-player/compare/v1.0.5...v1.0.6) (2026-07-23)
 
 
