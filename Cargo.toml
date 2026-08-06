@@ -55,18 +55,35 @@ wgpu = ["iced_video_player/wgpu", "libcosmic/wgpu"]
 inherits = "release"
 debug = true
 
+# Pinned to `fix/theme-seed-7c4bf15`: upstream 7c4bf15 -- the base this crate was
+# already locked to -- plus the theme fixes ported from master. Without them the
+# CSD header bar is hardcoded `Color::WHITE` with no theme lookup at all
+# (libcosmic `src/widget/header_bar.rs`), so it stays white in dark mode while the
+# body follows the palette. The theme-seed fix alone is not enough; `640dd040` is
+# what makes the chrome mode-aware.
+#
+# `iced_video_player` must stay on the same branch (it names playtron-os/libcosmic
+# directly, so this patch table does not cover it). If it drifts back to an
+# unbranched rev the graph gains a second libcosmic and resolution fails on
+# zbus ^5.15 vs ashpd's 5.14.
+#
+# Do NOT drop the branch and track `master`: it has moved on to a much newer
+# upstream that removes `cosmic::iced_core` (src/key_bind.rs) and
+# `widget::horizontal_space`/`vertical_space` (src/main.rs), and renames
+# `Widget::on_event` to `update`. Every master commit carrying the chrome fix
+# also carries that removal, so no usable master rev exists.
 [patch.'https://github.com/pop-os/libcosmic']
-libcosmic = { git = "https://github.com/playtron-os/libcosmic.git" }
-cosmic-config = { git = "https://github.com/playtron-os/libcosmic.git" }
-cosmic-config-derive = { git = "https://github.com/playtron-os/libcosmic.git" }
-cosmic-theme = { git = "https://github.com/playtron-os/libcosmic.git" }
-iced = { git = "https://github.com/playtron-os/libcosmic.git" }
-iced_core = { git = "https://github.com/playtron-os/libcosmic.git" }
-iced_futures = { git = "https://github.com/playtron-os/libcosmic.git" }
-iced_graphics = { git = "https://github.com/playtron-os/libcosmic.git" }
-iced_renderer = { git = "https://github.com/playtron-os/libcosmic.git" }
-iced_runtime = { git = "https://github.com/playtron-os/libcosmic.git" }
-iced_tiny_skia = { git = "https://github.com/playtron-os/libcosmic.git" }
-iced_wgpu = { git = "https://github.com/playtron-os/libcosmic.git" }
-iced_widget = { git = "https://github.com/playtron-os/libcosmic.git" }
-iced_winit = { git = "https://github.com/playtron-os/libcosmic.git" }
+libcosmic = { git = "https://github.com/playtron-os/libcosmic.git", branch = "fix/theme-seed-7c4bf15" }
+cosmic-config = { git = "https://github.com/playtron-os/libcosmic.git", branch = "fix/theme-seed-7c4bf15" }
+cosmic-config-derive = { git = "https://github.com/playtron-os/libcosmic.git", branch = "fix/theme-seed-7c4bf15" }
+cosmic-theme = { git = "https://github.com/playtron-os/libcosmic.git", branch = "fix/theme-seed-7c4bf15" }
+iced = { git = "https://github.com/playtron-os/libcosmic.git", branch = "fix/theme-seed-7c4bf15" }
+iced_core = { git = "https://github.com/playtron-os/libcosmic.git", branch = "fix/theme-seed-7c4bf15" }
+iced_futures = { git = "https://github.com/playtron-os/libcosmic.git", branch = "fix/theme-seed-7c4bf15" }
+iced_graphics = { git = "https://github.com/playtron-os/libcosmic.git", branch = "fix/theme-seed-7c4bf15" }
+iced_renderer = { git = "https://github.com/playtron-os/libcosmic.git", branch = "fix/theme-seed-7c4bf15" }
+iced_runtime = { git = "https://github.com/playtron-os/libcosmic.git", branch = "fix/theme-seed-7c4bf15" }
+iced_tiny_skia = { git = "https://github.com/playtron-os/libcosmic.git", branch = "fix/theme-seed-7c4bf15" }
+iced_wgpu = { git = "https://github.com/playtron-os/libcosmic.git", branch = "fix/theme-seed-7c4bf15" }
+iced_widget = { git = "https://github.com/playtron-os/libcosmic.git", branch = "fix/theme-seed-7c4bf15" }
+iced_winit = { git = "https://github.com/playtron-os/libcosmic.git", branch = "fix/theme-seed-7c4bf15" }

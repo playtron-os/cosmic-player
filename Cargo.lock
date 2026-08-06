@@ -1026,7 +1026,7 @@ dependencies = [
 [[package]]
 name = "cosmic-config"
 version = "1.0.0"
-source = "git+https://github.com/playtron-os/libcosmic.git#7c4bf15658e75d4bb8518a9f874710c373b6f1bf"
+source = "git+https://github.com/playtron-os/libcosmic.git?branch=fix%2Ftheme-seed-7c4bf15#f8b1a60075fc2ac59f459139845e1f02e619eb69"
 dependencies = [
  "atomicwrites",
  "cosmic-config-derive",
@@ -1047,7 +1047,7 @@ dependencies = [
 [[package]]
 name = "cosmic-config-derive"
 version = "1.0.0"
-source = "git+https://github.com/playtron-os/libcosmic.git#7c4bf15658e75d4bb8518a9f874710c373b6f1bf"
+source = "git+https://github.com/playtron-os/libcosmic.git?branch=fix%2Ftheme-seed-7c4bf15#f8b1a60075fc2ac59f459139845e1f02e619eb69"
 dependencies = [
  "quote",
  "syn 2.0.117",
@@ -1141,7 +1141,7 @@ dependencies = [
 [[package]]
 name = "cosmic-theme"
 version = "1.0.0"
-source = "git+https://github.com/playtron-os/libcosmic.git#7c4bf15658e75d4bb8518a9f874710c373b6f1bf"
+source = "git+https://github.com/playtron-os/libcosmic.git?branch=fix%2Ftheme-seed-7c4bf15#f8b1a60075fc2ac59f459139845e1f02e619eb69"
 dependencies = [
  "almost",
  "cosmic-config",
@@ -2708,7 +2708,7 @@ dependencies = [
 [[package]]
 name = "iced"
 version = "0.14.0-dev"
-source = "git+https://github.com/playtron-os/libcosmic.git#7c4bf15658e75d4bb8518a9f874710c373b6f1bf"
+source = "git+https://github.com/playtron-os/libcosmic.git?branch=fix%2Ftheme-seed-7c4bf15#f8b1a60075fc2ac59f459139845e1f02e619eb69"
 dependencies = [
  "dnd",
  "iced_accessibility",
@@ -2726,7 +2726,7 @@ dependencies = [
 [[package]]
 name = "iced_accessibility"
 version = "0.1.0"
-source = "git+https://github.com/playtron-os/libcosmic.git#7c4bf15658e75d4bb8518a9f874710c373b6f1bf"
+source = "git+https://github.com/playtron-os/libcosmic.git?branch=fix%2Ftheme-seed-7c4bf15#f8b1a60075fc2ac59f459139845e1f02e619eb69"
 dependencies = [
  "accesskit",
  "accesskit_winit",
@@ -2735,7 +2735,7 @@ dependencies = [
 [[package]]
 name = "iced_core"
 version = "0.14.0-dev"
-source = "git+https://github.com/playtron-os/libcosmic.git#7c4bf15658e75d4bb8518a9f874710c373b6f1bf"
+source = "git+https://github.com/playtron-os/libcosmic.git?branch=fix%2Ftheme-seed-7c4bf15#f8b1a60075fc2ac59f459139845e1f02e619eb69"
 dependencies = [
  "bitflags 2.11.1",
  "bytes",
@@ -2758,7 +2758,7 @@ dependencies = [
 [[package]]
 name = "iced_futures"
 version = "0.14.0-dev"
-source = "git+https://github.com/playtron-os/libcosmic.git#7c4bf15658e75d4bb8518a9f874710c373b6f1bf"
+source = "git+https://github.com/playtron-os/libcosmic.git?branch=fix%2Ftheme-seed-7c4bf15#f8b1a60075fc2ac59f459139845e1f02e619eb69"
 dependencies = [
  "futures",
  "iced_core",
@@ -2784,7 +2784,7 @@ dependencies = [
 [[package]]
 name = "iced_graphics"
 version = "0.14.0-dev"
-source = "git+https://github.com/playtron-os/libcosmic.git#7c4bf15658e75d4bb8518a9f874710c373b6f1bf"
+source = "git+https://github.com/playtron-os/libcosmic.git?branch=fix%2Ftheme-seed-7c4bf15#f8b1a60075fc2ac59f459139845e1f02e619eb69"
 dependencies = [
  "bitflags 2.11.1",
  "bytemuck",
@@ -2806,7 +2806,7 @@ dependencies = [
 [[package]]
 name = "iced_renderer"
 version = "0.14.0-dev"
-source = "git+https://github.com/playtron-os/libcosmic.git#7c4bf15658e75d4bb8518a9f874710c373b6f1bf"
+source = "git+https://github.com/playtron-os/libcosmic.git?branch=fix%2Ftheme-seed-7c4bf15#f8b1a60075fc2ac59f459139845e1f02e619eb69"
 dependencies = [
  "iced_graphics",
  "iced_tiny_skia",
@@ -2818,7 +2818,7 @@ dependencies = [
 [[package]]
 name = "iced_runtime"
 version = "0.14.0-dev"
-source = "git+https://github.com/playtron-os/libcosmic.git#7c4bf15658e75d4bb8518a9f874710c373b6f1bf"
+source = "git+https://github.com/playtron-os/libcosmic.git?branch=fix%2Ftheme-seed-7c4bf15#f8b1a60075fc2ac59f459139845e1f02e619eb69"
 dependencies = [
  "bytes",
  "dnd",
@@ -2832,7 +2832,7 @@ dependencies = [
 [[package]]
 name = "iced_tiny_skia"
 version = "0.14.0-dev"
-source = "git+https://github.com/playtron-os/libcosmic.git#7c4bf15658e75d4bb8518a9f874710c373b6f1bf"
+source = "git+https://github.com/playtron-os/libcosmic.git?branch=fix%2Ftheme-seed-7c4bf15#f8b1a60075fc2ac59f459139845e1f02e619eb69"
 dependencies = [
  "bytemuck",
  "cosmic-text",
@@ -2848,7 +2848,7 @@ dependencies = [
 [[package]]
 name = "iced_video_player"
 version = "0.6.0"
-source = "git+https://github.com/playtron-os/iced_video_player.git?branch=cosmic#5384ae790ebce7ecae462cade1d0e4d818d6f7b9"
+source = "git+https://github.com/playtron-os/iced_video_player.git?branch=cosmic#6bf1f59cf34866ddc94ea3ef91e0626f8970847e"
 dependencies = [
  "glib",
  "gstreamer",
@@ -2865,7 +2865,7 @@ dependencies = [
 [[package]]
 name = "iced_wgpu"
 version = "0.14.0-dev"
-source = "git+https://github.com/playtron-os/libcosmic.git#7c4bf15658e75d4bb8518a9f874710c373b6f1bf"
+source = "git+https://github.com/playtron-os/libcosmic.git?branch=fix%2Ftheme-seed-7c4bf15#f8b1a60075fc2ac59f459139845e1f02e619eb69"
 dependencies = [
  "as-raw-xcb-connection",
  "bitflags 2.11.1",
@@ -2896,7 +2896,7 @@ dependencies = [
 [[package]]
 name = "iced_widget"
 version = "0.14.0-dev"
-source = "git+https://github.com/playtron-os/libcosmic.git#7c4bf15658e75d4bb8518a9f874710c373b6f1bf"
+source = "git+https://github.com/playtron-os/libcosmic.git?branch=fix%2Ftheme-seed-7c4bf15#f8b1a60075fc2ac59f459139845e1f02e619eb69"
 dependencies = [
  "dnd",
  "iced_renderer",
@@ -2914,7 +2914,7 @@ dependencies = [
 [[package]]
 name = "iced_winit"
 version = "0.14.0-dev"
-source = "git+https://github.com/playtron-os/libcosmic.git#7c4bf15658e75d4bb8518a9f874710c373b6f1bf"
+source = "git+https://github.com/playtron-os/libcosmic.git?branch=fix%2Ftheme-seed-7c4bf15#f8b1a60075fc2ac59f459139845e1f02e619eb69"
 dependencies = [
  "dnd",
  "iced_futures",
@@ -3533,7 +3533,7 @@ checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
 [[package]]
 name = "libcosmic"
 version = "1.0.0"
-source = "git+https://github.com/playtron-os/libcosmic.git#7c4bf15658e75d4bb8518a9f874710c373b6f1bf"
+source = "git+https://github.com/playtron-os/libcosmic.git?branch=fix%2Ftheme-seed-7c4bf15#f8b1a60075fc2ac59f459139845e1f02e619eb69"
 dependencies = [
  "apply",
  "ashpd 0.12.3",
