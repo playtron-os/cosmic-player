@@ -1,3 +1,10 @@
+## [1.0.9](https://github.com/playtron-os/cosmic-player/compare/v1.0.8...v1.0.9) (2026-08-06)
+
+
+### Bug Fixes
+
+* **theme:** pin libcosmic to the branch carrying the dark-mode chrome fix ([267de52](https://github.com/playtron-os/cosmic-player/commit/267de52c34f0aa317fb71c498fa3529ab38178e8))
+
 ## [1.0.8](https://github.com/playtron-os/cosmic-player/compare/v1.0.7...v1.0.8) (2026-08-04)
 
 
