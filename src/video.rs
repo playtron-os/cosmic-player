@@ -16,6 +16,12 @@ pub fn new_video(url: &url::Url, settings: VideoSettings) -> Result<Video, Task<
     //TODO: remove unwraps.
     gst::init().unwrap();
 
+    // The Iris hardware VP9 decoder (qcom_iris on Linux 7.2) stops producing frames after any
+    // seek, freezing the video, so decode VP9 in software until the driver is fixed.
+    if let Some(decoder) = gst::Registry::get().lookup_feature("v4l2vp9dec") {
+        decoder.set_rank(gst::Rank::NONE);
+    }
+
     // The `vis` flag makes playbin render an audio visualization when the media has no video
     // stream, so audio-only files (e.g. mp3) still produce the video frames the player needs to
     // negotiate its sink and play. The remaining flags are playbin's defaults.
