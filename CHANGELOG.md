@@ -1,3 +1,11 @@
+## [1.0.10](https://github.com/playtron-os/cosmic-player/compare/v1.0.9...v1.0.10) (2026-10-06)
+
+
+### Bug Fixes
+
+* decode VP9 in software so seeking does not freeze it ([d6a3ed9](https://github.com/playtron-os/cosmic-player/commit/d6a3ed9381b00f96257917809d6ce25ec3ff345f))
+* stop the player hanging while the progress bar is dragged ([fe5c12a](https://github.com/playtron-os/cosmic-player/commit/fe5c12a8fba8c5522d76bc4bbd54c98da596513e))
+
 ## [1.0.9](https://github.com/playtron-os/cosmic-player/compare/v1.0.8...v1.0.9) (2026-08-06)
 
 
