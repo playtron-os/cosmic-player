@@ -50,6 +50,8 @@ mod video;
 mod xdg_portals;
 
 static CONTROLS_TIMEOUT: Duration = Duration::new(2, 0);
+/// How long a seek may wait for the previous one's frame before going out anyway.
+static SEEK_FRAME_TIMEOUT: Duration = Duration::from_millis(500);
 
 const GST_PLAY_FLAG_VIDEO: i32 = 1 << 0;
 const GST_PLAY_FLAG_AUDIO: i32 = 1 << 1;
@@ -69,6 +71,18 @@ fn language_name(code: &str) -> Option<String> {
     };
     let name = name_c.to_str().ok()?;
     Some(name.to_string())
+}
+
+/// Whether `pipeline` is paused or about to be. A seek still in flight reads PAUSED
+/// until its frame prerolls, so this looks at the state it is heading to.
+fn heading_to_pause(pipeline: &gst::Pipeline) -> bool {
+    let (_, current, pending) = pipeline.state(gst::ClockTime::ZERO);
+    let target = if pending == gst::State::VoidPending {
+        current
+    } else {
+        pending
+    };
+    target == gst::State::Paused
 }
 
 /// Runs application with these settings
@@ -281,6 +295,7 @@ pub enum Message {
     RepeatToggled(RepeatState),
     Scrolled(ScrollDelta),
     Seek(f64),
+    SeekPending,
     SeekRelative(f64),
     SeekRelease,
     PlayNext,
@@ -313,6 +328,14 @@ pub struct App {
     duration: f64,
     dragging: bool,
     paused_on_scrub: bool,
+    /// A seek waiting for the one in flight to land, and whether it must be accurate.
+    pending_seek: Option<(f64, bool)>,
+    /// When the last seek went out, until a frame from it is shown.
+    seek_sent: Option<Instant>,
+    /// Playing only until the next frame is drawn, to show a seek while paused.
+    stepping: bool,
+    /// Whether the video was muted before a frame step muted it.
+    step_muted: Option<bool>,
     audio_codes: Vec<String>,
     audio_tags: Vec<gst::TagList>,
     current_audio: i32,
@@ -339,6 +362,10 @@ impl App {
         self.position = 0.0;
         self.duration = 0.0;
         self.dragging = false;
+        self.pending_seek = None;
+        self.seek_sent = None;
+        self.stepping = false;
+        self.step_muted = None;
         self.audio_codes.clear();
         self.audio_tags.clear();
         self.current_audio = -1;
@@ -604,6 +631,81 @@ impl App {
             self.controls = false;
         }
         self.update_mpris_state();
+    }
+
+    /// Seek to `secs`, or queue it while an earlier seek is still in flight. Each
+    /// flushing seek restarts the decoder, and a burst of them (one per pointer move
+    /// on the progress bar) wedges the Iris hardware decoder and hangs the player.
+    fn seek(&mut self, secs: f64, accurate: bool) {
+        self.pending_seek = Some((secs, accurate));
+        self.send_pending_seek();
+    }
+
+    /// Whether a seek is still prerolling: the pipeline reads ASYNC until the frame at
+    /// the new position reaches the sink.
+    fn seek_loading(&self) -> bool {
+        self.video_opt.as_ref().is_some_and(|video| {
+            matches!(
+                video.pipeline().state(gst::ClockTime::ZERO).0,
+                Ok(gst::StateChangeSuccess::Async)
+            )
+        })
+    }
+
+    fn send_pending_seek(&mut self) {
+        let Some((secs, accurate)) = self.pending_seek else {
+            return;
+        };
+        // Also wait for the last seek's frame to be shown: the next flush would drop it
+        // unseen, and the picture would not follow the drag.
+        let shown = self
+            .seek_sent
+            .is_none_or(|sent| sent.elapsed() >= SEEK_FRAME_TIMEOUT);
+        if !shown || self.seek_loading() {
+            return;
+        }
+        let Some(video) = &self.video_opt else {
+            return;
+        };
+        let pipeline = video.pipeline();
+        let paused = self.dragging || self.stepping || heading_to_pause(&pipeline);
+        self.pending_seek = None;
+        self.seek_sent = Some(Instant::now());
+        let flags = gst::SeekFlags::FLUSH
+            | if accurate {
+                gst::SeekFlags::ACCURATE
+            } else {
+                gst::SeekFlags::KEY_UNIT | gst::SeekFlags::SNAP_NEAREST
+            };
+        let position = gst::ClockTime::from_nseconds((secs.max(0.0) * 1_000_000_000.0) as u64);
+        if let Err(err) = pipeline.seek_simple(flags, position) {
+            log::warn!("failed to seek to {secs:.3}s: {err}");
+        }
+        if paused {
+            self.step_frame();
+        }
+    }
+
+    /// Show the frame at a new position while paused. The video widget only draws
+    /// frames that play, so play muted until one is drawn; `NewFrame` pauses again.
+    fn step_frame(&mut self) {
+        let Some(video) = &mut self.video_opt else {
+            return;
+        };
+        if self.step_muted.is_none() {
+            self.step_muted = Some(video.muted());
+            video.set_muted(true);
+        }
+        self.stepping = true;
+        if let Err(err) = video.pipeline().set_state(gst::State::Playing) {
+            log::warn!("failed to play to the seeked frame: {err}");
+        }
+    }
+
+    fn restore_step_mute(&mut self) {
+        if let (Some(video), Some(muted)) = (&mut self.video_opt, self.step_muted.take()) {
+            video.set_muted(muted);
+        }
     }
 
     fn update_config(&mut self) -> Task<Message> {
@@ -877,6 +979,10 @@ impl Application for App {
             duration: 0.0,
             dragging: false,
             paused_on_scrub: false,
+            pending_seek: None,
+            seek_sent: None,
+            stepping: false,
+            step_muted: None,
             audio_codes: Vec::new(),
             audio_tags: Vec::new(),
             current_audio: -1,
@@ -1288,34 +1394,58 @@ impl Application for App {
                 self.dropdown_opt = None;
 
                 if let Some(video) = &mut self.video_opt {
-                    self.dragging = true;
+                    // Pause once per drag, so the release resumes what was playing.
+                    if !self.dragging {
+                        self.dragging = true;
+                        self.paused_on_scrub = heading_to_pause(&video.pipeline());
+                        video.set_paused(true);
+                    }
                     self.position = secs;
-                    self.paused_on_scrub = video.paused();
-                    video.set_paused(true);
-                    let duration = Duration::try_from_secs_f64(self.position).unwrap_or_default();
-                    video.seek(duration, true).expect("seek");
+                    self.seek(secs, false);
                     self.update_controls(true);
                 }
             }
+            Message::SeekPending => {
+                self.send_pending_seek();
+            }
             Message::SeekRelative(secs) => {
-                if let Some(video) = &mut self.video_opt {
-                    self.position = video.position().as_secs_f64();
-                    let duration =
-                        Duration::try_from_secs_f64(self.position + secs).unwrap_or_default();
-                    video.seek(duration, true).expect("seek");
+                if let Some(video) = &self.video_opt {
+                    // Key repeat steps on from a queued seek, not the old position.
+                    let from = match self.pending_seek {
+                        Some((pending, _)) => pending,
+                        None => video.position().as_secs_f64(),
+                    };
+                    self.position = (from + secs).max(0.0);
+                    self.seek(self.position, true);
                 }
             }
             Message::SeekRelease => {
                 //TODO: cleanest way to close dropdowns
                 self.dropdown_opt = None;
 
-                if let Some(video) = &mut self.video_opt {
-                    self.dragging = false;
-                    let duration = Duration::try_from_secs_f64(self.position).unwrap_or_default();
-                    video.seek(duration, true).expect("seek");
-                    video.set_paused(self.paused_on_scrub);
-                    self.update_controls(true);
+                if !self.dragging {
+                    return Task::none();
                 }
+                self.dragging = false;
+                if let Some(video) = &mut self.video_opt {
+                    // Playback resumes here, so this one goes out now, and accurately.
+                    self.pending_seek = None;
+                    self.seek_sent = Some(Instant::now());
+                    let duration = Duration::try_from_secs_f64(self.position).unwrap_or_default();
+                    if let Err(err) = video.seek(duration, true) {
+                        log::warn!("failed to seek to {:.3}s: {err}", self.position);
+                    }
+                }
+                if self.paused_on_scrub {
+                    self.step_frame();
+                } else {
+                    self.stepping = false;
+                    self.restore_step_mute();
+                    if let Some(video) = &mut self.video_opt {
+                        video.set_paused(false);
+                    }
+                }
+                self.update_controls(true);
             }
 
             Message::PlayNext => {
@@ -1441,8 +1571,25 @@ impl Application for App {
                 self.update_mpris_state();
             }
             Message::NewFrame => {
+                // Only a frame that arrives after the seek prerolled is from its position.
+                if !self.seek_loading() {
+                    self.seek_sent = None;
+                    if self.stepping {
+                        self.stepping = false;
+                        if let Some(video) = &self.video_opt
+                            && let Err(err) = video.pipeline().set_state(gst::State::Paused)
+                        {
+                            log::warn!("failed to pause on the seeked frame: {err}");
+                        }
+                        // A drag stays muted until it is released.
+                        if !self.dragging {
+                            self.restore_step_mute();
+                        }
+                    }
+                }
+                self.send_pending_seek();
                 if let Some(video) = &self.video_opt {
-                    if !self.dragging {
+                    if !self.dragging && self.pending_seek.is_none() {
                         self.position = video.position().as_secs_f64();
                         self.update_controls(self.dropdown_opt.is_some());
                     }
@@ -1867,6 +2014,13 @@ impl Application for App {
         #[cfg(feature = "mpris-server")]
         {
             subscriptions.push(mpris::subscription());
+        }
+
+        // Paused, a seek brings no new frame to wake us, so poll for it to land.
+        if self.pending_seek.is_some() {
+            subscriptions.push(
+                cosmic::iced::time::every(Duration::from_millis(20)).map(|_| Message::SeekPending),
+            );
         }
 
         Subscription::batch(subscriptions)
